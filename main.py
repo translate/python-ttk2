@@ -33,7 +33,7 @@ class POStore(Store):
 		last = None
 		for line in block.split("\n"):
 			if line.startswith("#"):
-				comment.append(line)
+				comment.append(line[1:].strip())
 			elif line.startswith("msgid"):
 				msgid.append(self._read_string(line[6:]))
 				last = msgid
@@ -67,6 +67,9 @@ class POStore(Store):
 			return '"%s"' % (s.replace("\\", "\\\\").replace(r'"', r'\"').replace("\n", "\\n"))
 
 		ret = []
+		comment = getattr(unit, "comment", "")
+		if comment:
+			ret += ["# " + line for line in comment.split("\n")]
 		ret.append("msgid %s" % (porepr(unit.key)))
 		ret.append("msgstr %s" % (porepr(unit.value)))
 		return "\n".join(ret)
