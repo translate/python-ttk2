@@ -52,10 +52,11 @@ class POStore(Store):
 		# what you gonna do about it?
 		return ast.literal_eval(s)
 
-	def read(self, file):
+	def read(self, file, lang):
 		blocks = file.read().split("\n\n")
 		for block in blocks:
 			unit = self._parse_block(block)
+			unit.lang = lang
 			if unit.key == "":
 				self.header = unit
 			else:
@@ -84,10 +85,11 @@ class POStore(Store):
 
 
 class JSONStore(Store):
-	def read(self, file):
+	def read(self, file, lang):
 		d = json.load(file)
 		for key in sorted(d.keys()):
 			unit = Unit(key, d[key])
+			unit.lang = lang
 			self.units.append(unit)
 
 	def serialize(self):
@@ -108,7 +110,7 @@ if __name__ == "__main__":
 		with open(name, "r") as f:
 			_, ext = os.path.splitext(name)
 			tfile = map[ext]()
-			tfile.read(f)
+			tfile.read(f, lang="en")
 			#for unit in tfile.units:
 			#	print(unit)
 
