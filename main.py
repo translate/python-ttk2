@@ -88,6 +88,9 @@ class JSONStore(Store):
 	def read(self, file, lang):
 		d = json.load(file)
 		for key in sorted(d.keys()):
+			if key == "@metadata":
+				self.header = d[key]
+				continue
 			unit = Unit(key, d[key])
 			unit.lang = lang
 			self.units.append(unit)
