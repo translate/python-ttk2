@@ -29,22 +29,38 @@ class POStore(Store):
 	def _parse_block(self, block):
 		comment = []
 		msgid = []
+		msgid_plural = []
 		msgstr = []
+		msgstr_plural = {}
 		last = None
 		for line in block.split("\n"):
 			if line.startswith("#"):
 				comment.append(line[1:].strip())
+			elif line.startswith("msgid_plural"):
+				msgid.append(self._read_string(line[len("msgid_plural "):]))
+				last = msgid
 			elif line.startswith("msgid"):
 				msgid.append(self._read_string(line[6:]))
 				last = msgid
 			elif line.startswith("msgstr"):
-				msgstr.append(self._read_string(line[7:]))
-				last = msgstr
+				if line[6] == "[":
+					line = line[6:]
+					assert line[2] == "]", "Max 10 strings in plurals"
+					i = int(line[1])
+					msgstr_plural[i] = [self._read_string(line[4:])]
+					last = msgstr_plural[i]
+				else:
+					msgstr.append(self._read_string(line[7:]))
+					last = msgstr
 			elif line.startswith('"'):
 				last.append(self._read_string(line))
 
 		unit = Unit("".join(msgid), "".join(msgstr))
 		unit.comment = "".join(comment)
+		unit.plural_id = "".join(msgid_plural)
+		unit.plurals = {}
+		for k, v in msgstr_plural.items():
+			unit.plurals[k] = "".join(v)
 
 		return unit
 
