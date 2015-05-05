@@ -3,6 +3,7 @@ import ast
 import json
 import os
 from collections import OrderedDict
+from xml.etree import ElementTree
 
 
 class Store:
@@ -118,9 +119,29 @@ class JSONStore(Store):
 		return json.dumps(ret)
 
 
+class TSStore(Store):
+	def read(self, file, lang):
+		xml = ElementTree.parse(file)
+		for context in xml.findall("context"):
+			context_name = context.findtext("name")
+			for message in context.findall("message"):
+				location = message.find("location")
+				source = message.findtext("source")
+				translation = message.findtext("translation")
+
+				unit = Unit(source, translation)
+				unit.context = context_name
+				if location is not None:
+					unit.location = {
+						"filename": location.attrib["filename"],
+						"line": location.attrib["line"],
+					}
+				self.units.append(unit)
+
 map = {
 	".po": POStore,
 	".json": JSONStore,
+	".ts": TSStore,
 }
 
 if __name__ == "__main__":
