@@ -21,6 +21,7 @@ class Unit:
 	def __init__(self, key, value):
 		self.key = key
 		self.value = value
+		self.location = None
 
 	def __repr__(self):
 		return "<Unit %r: %s>" % (self.key, self.value)
@@ -88,6 +89,9 @@ class POStore(Store):
 		comment = getattr(unit, "comment", "")
 		if comment:
 			ret += ["# " + line for line in comment.split("\n")]
+
+		if unit.location:
+			ret.append("#: %s:%s" % (unit.location["filename"], unit.location["line"]))
 		ret.append("msgid %s" % (porepr(unit.key)))
 		ret.append("msgstr %s" % (porepr(unit.value)))
 		return "\n".join(ret)
