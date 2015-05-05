@@ -34,9 +34,13 @@ class POStore(Store):
 		msgid_plural = []
 		msgstr = []
 		msgstr_plural = {}
+		location = None
 		last = None
 		for line in block.split("\n"):
-			if line.startswith("#"):
+			if line.startswith("#:"):
+				filename, line = line[3:].split(":")
+				location = {"filename": filename, "line": line}
+			elif line.startswith("#"):
 				comment.append(line[1:])
 			elif line.startswith("msgid_plural"):
 				msgid.append(self._read_string(line[len("msgid_plural "):]))
@@ -59,6 +63,7 @@ class POStore(Store):
 
 		unit = Unit("".join(msgid), "".join(msgstr))
 		unit.comment = "".join(comment)
+		unit.location = location
 		unit.plural_id = "".join(msgid_plural)
 		unit.plurals = {}
 		for k, v in msgstr_plural.items():
