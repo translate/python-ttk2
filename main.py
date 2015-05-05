@@ -37,7 +37,7 @@ class POStore(Store):
 		last = None
 		for line in block.split("\n"):
 			if line.startswith("#"):
-				comment.append(line[1:].strip())
+				comment.append(line[1:])
 			elif line.startswith("msgid_plural"):
 				msgid.append(self._read_string(line[len("msgid_plural "):]))
 				last = msgid
@@ -88,7 +88,7 @@ class POStore(Store):
 		ret = []
 		comment = getattr(unit, "comment", "")
 		if comment:
-			ret += ["# " + line for line in comment.split("\n")]
+			ret += ["#" + line for line in comment.split("\n")]
 
 		if unit.location:
 			ret.append("#: %s:%s" % (unit.location["filename"], unit.location["line"]))
