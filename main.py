@@ -17,11 +17,6 @@ if __name__ == "__main__":
 			_, ext = os.path.splitext(name)
 			tfile = map[ext]()
 			tfile.read(f, lang="en")
-			#for unit in tfile.units:
-			#	print(unit)
 
-			converted = JSONStore.from_store(tfile)
-			#print(converted.serialize())
-
-			back_into_po = POStore.from_store(converted)
-			#print(back_into_po.serialize())
+			converted = tfile.__class__.from_store(tfile)
+			print(converted.serialize())
