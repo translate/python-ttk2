@@ -22,6 +22,7 @@ class Unit:
 		self.key = key
 		self.value = value
 		self.location = None
+		self.context = ""
 
 	def __repr__(self):
 		return "<Unit %r: %s>" % (self.key, self.value)
@@ -30,6 +31,7 @@ class Unit:
 class POStore(Store):
 	def _parse_block(self, block):
 		comment = []
+		msgctxt = []
 		msgid = []
 		msgid_plural = []
 		msgstr = []
@@ -42,6 +44,9 @@ class POStore(Store):
 				location = {"filename": filename, "line": line}
 			elif line.startswith("#"):
 				comment.append(line[1:])
+			elif line.startswith("msgctxt"):
+				msgctxt.append(self._read_string(line[len("msgctxt "):]))
+				last = msgctxt
 			elif line.startswith("msgid_plural"):
 				msgid.append(self._read_string(line[len("msgid_plural "):]))
 				last = msgid
@@ -62,6 +67,7 @@ class POStore(Store):
 				last.append(self._read_string(line))
 
 		unit = Unit("".join(msgid), "".join(msgstr))
+		unit.context = "".join(msgctxt)
 		unit.comment = "".join(comment)
 		unit.location = location
 		unit.plural_id = "".join(msgid_plural)
@@ -97,6 +103,8 @@ class POStore(Store):
 
 		if unit.location:
 			ret.append("#: %s:%s" % (unit.location["filename"], unit.location["line"]))
+		if unit.context:
+			ret.append("msgctxt %s" % (porepr(unit.context)))
 		ret.append("msgid %s" % (porepr(unit.key)))
 		ret.append("msgstr %s" % (porepr(unit.value)))
 		return "\n".join(ret)
