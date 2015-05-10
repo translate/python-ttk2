@@ -21,6 +21,7 @@ class Unit:
 		self.value = value
 		self.location = None
 		self.context = ""
+		self.obsolete = False
 
 	def __repr__(self):
 		return "<Unit %r: %s>" % (self.key, self.value)
@@ -33,6 +34,7 @@ class POStore(Store):
 			unit = Unit(entry.msgid, entry.msgstr)
 			unit.context = entry.msgctxt
 			unit.comment = entry.comment
+			unit.obsolete = entry.obsolete
 			if entry.occurrences:
 				filename, line = entry.occurrences[0]
 				unit.location = {"filename": filename, "line": line}
@@ -49,6 +51,7 @@ class POStore(Store):
 				msgstr = unit.value,
 				comment = getattr(unit, "comment", ""),
 				occurences = occurences,
+				obsolete = unit.obsolete,
 			)
 			if unit.context:
 				entry.msgctxt = unit.context
