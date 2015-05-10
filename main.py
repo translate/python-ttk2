@@ -149,6 +149,7 @@ class TSStore(Store):
 
 map = {
 	".po": POStore,
+	".pot": POStore,
 	".json": JSONStore,
 	".ts": TSStore,
 }
