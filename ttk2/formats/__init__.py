@@ -1,5 +1,5 @@
-import ast
 import json
+import polib
 from collections import OrderedDict
 from xml.etree import ElementTree
 
@@ -27,92 +27,35 @@ class Unit:
 
 
 class POStore(Store):
-	def _parse_block(self, block):
-		comment = []
-		msgctxt = []
-		msgid = []
-		msgid_plural = []
-		msgstr = []
-		msgstr_plural = {}
-		location = None
-		last = None
-		for line in block.split("\n"):
-			if line.startswith("#:"):
-				filename, line = line[3:].split(":")
-				location = {"filename": filename, "line": line}
-			elif line.startswith("#"):
-				comment.append(line[1:])
-			elif line.startswith("msgctxt"):
-				msgctxt.append(self._read_string(line[len("msgctxt "):]))
-				last = msgctxt
-			elif line.startswith("msgid_plural"):
-				msgid.append(self._read_string(line[len("msgid_plural "):]))
-				last = msgid
-			elif line.startswith("msgid"):
-				msgid.append(self._read_string(line[6:]))
-				last = msgid
-			elif line.startswith("msgstr"):
-				if line[6] == "[":
-					line = line[6:]
-					assert line[2] == "]", "Max 10 strings in plurals"
-					i = int(line[1])
-					msgstr_plural[i] = [self._read_string(line[4:])]
-					last = msgstr_plural[i]
-				else:
-					msgstr.append(self._read_string(line[7:]))
-					last = msgstr
-			elif line.startswith('"'):
-				last.append(self._read_string(line))
-
-		unit = Unit("".join(msgid), "".join(msgstr))
-		unit.context = "".join(msgctxt)
-		unit.comment = "".join(comment)
-		unit.location = location
-		unit.plural_id = "".join(msgid_plural)
-		unit.plurals = {}
-		for k, v in msgstr_plural.items():
-			unit.plurals[k] = "".join(v)
-
-		return unit
-
-	def _read_string(self, s):
-		# what you gonna do about it?
-		return ast.literal_eval(s)
-
 	def read(self, file, lang):
-		blocks = file.read().split("\n\n")
-		for block in blocks:
-			unit = self._parse_block(block)
-			unit.lang = lang
-			if unit.key == "":
-				self.header = unit
-			else:
-				self.units.append(unit)
-
-	@staticmethod
-	def serialize_unit(unit):
-		def porepr(s):
-			return '"%s"' % (s.replace("\\", "\\\\").replace(r'"', r'\"').replace("\n", "\\n"))
-
-		ret = []
-		comment = getattr(unit, "comment", "")
-		if comment:
-			ret += ["#" + line for line in comment.split("\n")]
-
-		if unit.location:
-			ret.append("#: %s:%s" % (unit.location["filename"], unit.location["line"]))
-		if unit.context:
-			ret.append("msgctxt %s" % (porepr(unit.context)))
-		ret.append("msgid %s" % (porepr(unit.key)))
-		ret.append("msgstr %s" % (porepr(unit.value)))
-		return "\n".join(ret)
+		po = polib.pofile(file.read())
+		for entry in po:
+			unit = Unit(entry.msgid, entry.msgstr)
+			unit.context = entry.msgctxt
+			unit.comment = entry.comment
+			if entry.occurrences:
+				filename, line = entry.occurrences[0]
+				unit.location = {"filename": filename, "line": line}
+			self.units.append(unit)
 
 	def serialize(self):
-		ret = []
+		po = polib.POFile()
 		for unit in self.units:
-			ret.append(self.serialize_unit(unit))
+			occurences = []
+			if unit.location:
+				occurences.append((unit.location["filename"], unit.location["line"]))
+			entry = polib.POEntry(
+				msgid = unit.key,
+				msgstr = unit.value,
+				comment = getattr(unit, "comment", ""),
+				occurences = occurences,
+			)
+			if unit.context:
+				entry.msgctxt = unit.context
 
-		return "\n\n".join(ret)
+			po.append(entry)
+
+		return str(po)
 
 
 class JSONStore(Store):
