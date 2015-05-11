@@ -7,6 +7,7 @@ map = {
 	".po": POStore,
 	".pot": POStore,
 	".json": JSONStore,
+	".properties": PropertiesStore,
 	".ts": TSStore,
 }
 

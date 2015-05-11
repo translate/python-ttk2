@@ -2,6 +2,7 @@ import json
 import polib
 from collections import OrderedDict
 from xml.etree import ElementTree
+from . import jproperties
 
 
 class Store:
@@ -77,6 +78,31 @@ class JSONStore(Store):
 		for unit in self.units:
 			ret[unit.key] = unit.value
 		return json.dumps(ret)
+
+
+class PropertiesStore(Store):
+	def read(self, file, lang):
+		props = jproperties.Properties()
+		props.load(file)
+		comment = None
+		for node in props.nodes:
+			if isinstance(node, jproperties.Comment):
+				comment = node
+			elif isinstance(node, jproperties.Property):
+				unit = Unit(node.key, node.value)
+				if comment:
+					unit.comment = comment
+					comment = None
+				self.units.append(unit)
+
+	def serialize(self):
+		props = jproperties.Properties()
+		for unit in self.units:
+			if hasattr(unit, "comment"):
+				props.nodes.append(jproperties.Comment(unit.comment))
+			props[unit.key] = unit.value
+
+		return str(props)
 
 
 class TSStore(Store):
