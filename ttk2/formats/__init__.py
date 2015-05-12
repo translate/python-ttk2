@@ -118,15 +118,17 @@ class TSStore(Store):
 			for message in context.findall("message"):
 				location = message.find("location")
 				source = message.findtext("source")
-				translation = message.findtext("translation")
+				translation = message.find("translation")
 
-				unit = Unit(source, translation)
+				unit = Unit(source, translation.text)
 				unit.context = context_name
 				if location is not None:
 					unit.location = {
 						"filename": location.attrib["filename"],
 						"line": location.attrib["line"],
 					}
+				if translation.attrib.get("type") == "obsolete":
+					unit.obsolete = True
 				self.units.append(unit)
 
 	def _element(self, name, append_to, text=""):
@@ -158,5 +160,7 @@ class TSStore(Store):
 			if hasattr(unit, "comment"):
 				comment = self._element("comment", unit_element, text=unit.comment)
 			translation = self._element("translation", unit_element, text=unit.value)
+			if unit.obsolete:
+				translation.attrib["type"] = "obsolete"
 
 		return self._pretty_print(ElementTree.tostring(root))
