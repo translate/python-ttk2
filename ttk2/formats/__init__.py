@@ -109,6 +109,8 @@ class PropertiesStore(Store):
 
 
 class TSStore(Store):
+	VERSION = "2.1"
+
 	def read(self, file, lang):
 		xml = ElementTree.parse(file)
 		for context in xml.findall("context"):
@@ -126,3 +128,35 @@ class TSStore(Store):
 						"line": location.attrib["line"],
 					}
 				self.units.append(unit)
+
+	def _element(self, name, append_to, text=""):
+		e = ElementTree.Element(name)
+		if text:
+			e.text = text
+		append_to.append(e)
+		return e
+
+	def _pretty_print(self, input):
+		from xml.dom import minidom
+		xml = minidom.parseString(input)
+		# passing an encoding to toprettyxml() makes it return bytes... sigh.
+		return str(xml.toprettyxml(encoding=self.DEFAULT_ENCODING), encoding=self.DEFAULT_ENCODING)
+
+	def serialize(self):
+		root = ElementTree.Element("TS")
+		root.attrib["version"] = self.VERSION
+		#root.attrib["language"] = self.lang
+		contexts = {}
+		for unit in self.units:
+			if unit.context not in contexts:
+				e = self._element("context", root)
+				ce = self._element("name", e, text=unit.context)
+				contexts[unit.context] = e
+
+			unit_element = self._element("message", contexts[unit.context])
+			source = self._element("source", unit_element, text=unit.key)
+			if hasattr(unit, "comment"):
+				comment = self._element("comment", unit_element, text=unit.comment)
+			translation = self._element("translation", unit_element, text=unit.value)
+
+		return self._pretty_print(ElementTree.tostring(root))
