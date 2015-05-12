@@ -35,6 +35,7 @@ class POStore(Store):
 			unit = Unit(entry.msgid, entry.msgstr)
 			unit.context = entry.msgctxt
 			unit.comment = entry.comment
+			unit.translator_comment = entry.tcomment
 			unit.obsolete = entry.obsolete
 			if entry.occurrences:
 				filename, line = entry.occurrences[0]
@@ -51,6 +52,7 @@ class POStore(Store):
 				msgid = unit.key,
 				msgstr = unit.value,
 				comment = getattr(unit, "comment", ""),
+				tcomment = getattr(unit, "translator_comment", ""),
 				occurences = occurences,
 				obsolete = unit.obsolete,
 			)
