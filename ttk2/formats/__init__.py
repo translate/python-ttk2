@@ -21,7 +21,7 @@ class Unit:
 	def __init__(self, key, value):
 		self.key = key
 		self.value = value
-		self.location = None
+		self.occurrences = []
 		self.context = ""
 		self.obsolete = False
 
@@ -32,23 +32,21 @@ class Unit:
 class POStore(Store):
 	def read(self, file, lang):
 		po = polib.pofile(file.read())
+		lang = po.metadata.get("Language", lang)
 		for entry in po:
 			unit = Unit(entry.msgid, entry.msgstr)
+			unit.lang = lang
 			unit.context = entry.msgctxt
 			unit.comment = entry.comment
 			unit.translator_comment = entry.tcomment
 			unit.obsolete = entry.obsolete
-			if entry.occurrences:
-				filename, line = entry.occurrences[0]
-				unit.location = {"filename": filename, "line": line}
+			unit.occurrences = entry.occurrences[:]
 			self.units.append(unit)
 
 	def serialize(self):
 		po = polib.POFile()
 		for unit in self.units:
-			occurences = []
-			if unit.location:
-				occurences.append((unit.location["filename"], unit.location["line"]))
+			occurences = unit.occurrences[:]
 			entry = polib.POEntry(
 				msgid = unit.key,
 				msgstr = unit.value,
@@ -93,6 +91,7 @@ class PropertiesStore(Store):
 				comment = node
 			elif isinstance(node, jproperties.Property):
 				unit = Unit(node.key, node.value)
+				unit.lang = lang
 				if comment:
 					unit.comment = comment
 					comment = None
@@ -113,20 +112,21 @@ class TSStore(Store):
 
 	def read(self, file, lang):
 		xml = ElementTree.parse(file)
+		lang = xml.getroot().attrib["language"]
 		for context in xml.findall("context"):
 			context_name = context.findtext("name")
 			for message in context.findall("message"):
-				location = message.find("location")
 				source = message.findtext("source")
 				translation = message.find("translation")
 
-				unit = Unit(source, translation.text)
+				unit = Unit(source, translation.text or "")
+				unit.lang = lang
 				unit.context = context_name
-				if location is not None:
-					unit.location = {
-						"filename": location.attrib["filename"],
-						"line": location.attrib["line"],
-					}
+				for location in message.findall("location"):
+					unit.occurrences.append((
+						location.attrib["filename"],
+						location.attrib["line"],
+					))
 				if translation.attrib.get("type") == "obsolete":
 					unit.obsolete = True
 				self.units.append(unit)
@@ -147,7 +147,8 @@ class TSStore(Store):
 	def serialize(self):
 		root = ElementTree.Element("TS")
 		root.attrib["version"] = self.VERSION
-		#root.attrib["language"] = self.lang
+		# NOTE: We assume all units are the same language for now
+		root.attrib["language"] = self.units[0].lang
 		contexts = {}
 		for unit in self.units:
 			if unit.context not in contexts:
