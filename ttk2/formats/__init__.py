@@ -6,6 +6,7 @@ from . import jproperties
 
 
 class Store:
+	DEFAULT_ENCODING = "utf-8"
 	def __init__(self):
 		self.units = []
 
