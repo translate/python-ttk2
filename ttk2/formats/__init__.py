@@ -1,8 +1,16 @@
 import json
 import polib
 from collections import OrderedDict
+from enum import IntEnum
 from xml.etree import ElementTree
 from . import jproperties
+
+
+class State(IntEnum):
+	UNKNOWN = 0
+	UNTRANSLATED = 1
+	TRANSLATED = 2
+	UNFINISHED = 3
 
 
 class Store:
@@ -24,6 +32,7 @@ class Unit:
 		self.occurrences = []
 		self.context = ""
 		self.obsolete = False
+		self.state = State.UNKNOWN
 
 	def __repr__(self):
 		return "<Unit %r: %s>" % (self.key, self.value)
@@ -41,6 +50,8 @@ class POStore(Store):
 			unit.translator_comment = entry.tcomment
 			unit.obsolete = entry.obsolete
 			unit.occurrences = entry.occurrences[:]
+			if "fuzzy" in entry.flags:
+				unit.state = State.UNFINISHED
 			self.units.append(unit)
 
 	def serialize(self):
@@ -57,6 +68,8 @@ class POStore(Store):
 			)
 			if unit.context:
 				entry.msgctxt = unit.context
+			if unit.state == State.UNFINISHED:
+				entry.flags.append("fuzzy")
 
 			po.append(entry)
 
@@ -118,6 +131,7 @@ class TSStore(Store):
 			for message in context.findall("message"):
 				source = message.findtext("source")
 				translation = message.find("translation")
+				translation_type = translation.attrib.get("type")
 
 				unit = Unit(source, translation.text or "")
 				unit.lang = lang
@@ -127,8 +141,10 @@ class TSStore(Store):
 						location.attrib["filename"],
 						location.attrib["line"],
 					))
-				if translation.attrib.get("type") == "obsolete":
+				if translation_type == "obsolete":
 					unit.obsolete = True
+				elif translation_type == "unfinished":
+					unit.state = State.UNFINISHED
 				self.units.append(unit)
 
 	def _element(self, name, append_to, text=""):
