@@ -50,8 +50,11 @@ class POStore(Store):
 			unit.translator_comment = entry.tcomment
 			unit.obsolete = entry.obsolete
 			unit.occurrences = entry.occurrences[:]
-			if "fuzzy" in entry.flags:
+			flags = entry.flags
+			if "fuzzy" in flags:
 				unit.state = State.UNFINISHED
+				flags.remove("fuzzy")
+			unit.po_flags = flags
 			self.units.append(unit)
 
 	def serialize(self):
@@ -68,6 +71,8 @@ class POStore(Store):
 			)
 			if unit.context:
 				entry.msgctxt = unit.context
+			if hasattr(unit, "po_flags"):
+				entry.flags = unit.po_flags[:]
 			if unit.state == State.UNFINISHED:
 				entry.flags.append("fuzzy")
 
