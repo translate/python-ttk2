@@ -197,6 +197,29 @@ class TSStore(Store):
 		return self._pretty_print(ElementTree.tostring(root))
 
 
+class TMXStore(Store):
+	GLOBS = ["*.tmx"]
+	NAMESPACES = {
+		"xml": "http://www.w3.org/XML/1998/namespace",
+	}
+
+	def read(self, file, lang):
+		xml = ElementTree.parse(file)
+		root = xml.getroot()
+		header = root.find("header")
+		srclang = header.attrib["srclang"]
+		for tu in xml.find("body").findall("tu"):
+			slang = tu.attrib.get("srclang", srclang)
+			source = tu.find("tuv[@xml:lang='%s']" % (slang), self.NAMESPACES)
+			source_text = source.find("seg").text
+			for tuv in tu.findall("tuv"):
+				if tuv is not source:
+					target_text = tuv.find("seg").text
+					unit = Unit(source_text, target_text)
+					unit.lang = tuv.attrib["{http://www.w3.org/XML/1998/namespace}lang"]
+					self.units.append(unit)
+
+
 def guess_format(path):
 	"""
 	Return a Store class that can read \a path.
