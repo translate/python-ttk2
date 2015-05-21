@@ -133,7 +133,25 @@ class PropertiesStore(Store):
 		return str(props)
 
 
-class TSStore(Store):
+class XMLStore(Store):
+	"""
+	Base class for XML-based file stores
+	"""
+	def _element(self, name, append_to, text=""):
+		e = ElementTree.Element(name)
+		if text:
+			e.text = text
+		append_to.append(e)
+		return e
+
+	def _pretty_print(self, input):
+		from xml.dom import minidom
+		xml = minidom.parseString(input)
+		# passing an encoding to toprettyxml() makes it return bytes... sigh.
+		return str(xml.toprettyxml(encoding=self.DEFAULT_ENCODING), encoding=self.DEFAULT_ENCODING)
+
+
+class TSStore(XMLStore):
 	GLOBS = ["*.ts"]
 	VERSION = "2.1"
 
@@ -161,19 +179,6 @@ class TSStore(Store):
 					unit.state = State.UNFINISHED
 				self.units.append(unit)
 
-	def _element(self, name, append_to, text=""):
-		e = ElementTree.Element(name)
-		if text:
-			e.text = text
-		append_to.append(e)
-		return e
-
-	def _pretty_print(self, input):
-		from xml.dom import minidom
-		xml = minidom.parseString(input)
-		# passing an encoding to toprettyxml() makes it return bytes... sigh.
-		return str(xml.toprettyxml(encoding=self.DEFAULT_ENCODING), encoding=self.DEFAULT_ENCODING)
-
 	def serialize(self):
 		root = ElementTree.Element("TS")
 		root.attrib["version"] = self.VERSION
@@ -197,7 +202,7 @@ class TSStore(Store):
 		return self._pretty_print(ElementTree.tostring(root))
 
 
-class TMXStore(Store):
+class TMXStore(XMLStore):
 	GLOBS = ["*.tmx"]
 	NAMESPACES = {
 		"xml": "http://www.w3.org/XML/1998/namespace",
