@@ -15,6 +15,8 @@ class State(IntEnum):
 
 class Store:
 	DEFAULT_ENCODING = "utf-8"
+	GLOBS = []
+
 	def __init__(self):
 		self.units = []
 
@@ -39,6 +41,8 @@ class Unit:
 
 
 class POStore(Store):
+	GLOBS = ["*.po", "*.pot"]
+
 	def read(self, file, lang):
 		po = polib.pofile(file.read())
 		lang = po.metadata.get("Language", lang)
@@ -82,6 +86,8 @@ class POStore(Store):
 
 
 class JSONStore(Store):
+	GLOBS = ["*.json"]
+
 	def read(self, file, lang):
 		d = json.load(file)
 		for key in sorted(d.keys()):
@@ -100,6 +106,8 @@ class JSONStore(Store):
 
 
 class PropertiesStore(Store):
+	GLOBS = ["*.properties"]
+
 	def read(self, file, lang):
 		props = jproperties.Properties()
 		props.load(file)
@@ -126,6 +134,7 @@ class PropertiesStore(Store):
 
 
 class TSStore(Store):
+	GLOBS = ["*.ts"]
 	VERSION = "2.1"
 
 	def read(self, file, lang):
@@ -186,3 +195,22 @@ class TSStore(Store):
 				translation.attrib["type"] = "obsolete"
 
 		return self._pretty_print(ElementTree.tostring(root))
+
+
+def guess_format(path):
+	"""
+	Return a Store class that can read \a path.
+
+	Raises ValueError if no suitable class was found.
+
+	NOTE: Currently only looks at file extensions
+	"""
+	from fnmatch import fnmatch
+
+	for cls in globals().values():
+		if type(cls) is type and issubclass(cls, Store):
+			for glob in cls.GLOBS:
+				if fnmatch(path, glob):
+					return cls
+
+	raise ValueError("Unknown format: %r" % (path))

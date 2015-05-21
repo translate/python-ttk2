@@ -1,16 +1,6 @@
 #!/usr/bin/env python
-import os
 import sqlite3
 from ttk2.formats import *
-
-
-map = {
-	".po": POStore,
-	".pot": POStore,
-	".json": JSONStore,
-	".properties": PropertiesStore,
-	".ts": TSStore,
-}
 
 
 class SQLiteStore(Store):
@@ -61,9 +51,9 @@ class SQLiteStore(Store):
 if __name__ == "__main__":
 	import sys
 	for name in sys.argv[1:]:
+		cls = guess_format(name)
 		with open(name, "r") as f:
-			_, ext = os.path.splitext(name)
-			tfile = map[ext]()
+			tfile = cls()
 			tfile.read(f, lang="en")
 
 			sql = SQLiteStore.from_store(tfile)
