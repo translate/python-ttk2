@@ -1,9 +1,9 @@
 import json
+import jproperties
 import polib
 from collections import OrderedDict
 from enum import IntEnum
 from xml.etree import ElementTree
-from . import jproperties
 
 
 class State(IntEnum):
