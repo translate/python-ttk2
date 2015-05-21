@@ -19,6 +19,7 @@ class Store:
 
 	def __init__(self):
 		self.units = []
+		self.encoding = self.DEFAULT_ENCODING
 
 	@classmethod
 	def from_store(cls, store):
@@ -148,7 +149,7 @@ class XMLStore(Store):
 		from xml.dom import minidom
 		xml = minidom.parseString(input)
 		# passing an encoding to toprettyxml() makes it return bytes... sigh.
-		return str(xml.toprettyxml(encoding=self.DEFAULT_ENCODING), encoding=self.DEFAULT_ENCODING)
+		return str(xml.toprettyxml(encoding=self.encoding), encoding=self.encoding)
 
 
 class TSStore(XMLStore):
