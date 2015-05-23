@@ -205,9 +205,22 @@ class TSStore(XMLStore):
 
 class TMXStore(XMLStore):
 	GLOBS = ["*.tmx"]
+	VERSION = "1.4"
 	NAMESPACES = {
 		"xml": "http://www.w3.org/XML/1998/namespace",
 	}
+
+	def merged_units(self):
+		"""
+		Returns a list of (key, [unit1, unit2, ...]) pairs
+		for all the units in the Store.
+		"""
+		ret = OrderedDict()
+		for unit in self.units:
+			if unit.key not in ret:
+				ret[unit.key] = []
+			ret[unit.key].append(unit)
+		return ret
 
 	def read(self, file, lang):
 		xml = ElementTree.parse(file)
@@ -219,11 +232,30 @@ class TMXStore(XMLStore):
 			source = tu.find("tuv[@xml:lang='%s']" % (slang), self.NAMESPACES)
 			source_text = source.find("seg").text
 			for tuv in tu.findall("tuv"):
-				if tuv is not source:
-					target_text = tuv.find("seg").text
-					unit = Unit(source_text, target_text)
-					unit.lang = tuv.attrib["{http://www.w3.org/XML/1998/namespace}lang"]
-					self.units.append(unit)
+				# Both source and targets are created as units.
+				# Source units will look like (source, source) - translations of themselves
+				text = tuv.find("seg").text
+				unit = Unit(source_text, text)
+				unit.lang = tuv.attrib["{http://www.w3.org/XML/1998/namespace}lang"]
+				self.units.append(unit)
+
+	def serialize(self):
+		root = ElementTree.Element("tmx")
+		root.attrib["version"] = self.VERSION
+		header = self._element("header", root)
+		header.attrib["segtype"] = "sentence"
+		header.attrib["o-tmf"] = self.encoding
+		header.attrib["datatype"] = "PlainText"
+
+		body = self._element("body", root)
+		for key, units in self.merged_units().items():
+			tu = self._element("tu", body)
+			for unit in units:
+				tuv = self._element("tuv", tu)
+				tuv.attrib["xml:lang"] = unit.lang
+				seg = self._element("seg", tuv, unit.value)
+
+		return self._pretty_print(ElementTree.tostring(root))
 
 
 def guess_format(path):
