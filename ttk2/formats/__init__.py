@@ -44,7 +44,7 @@ class Unit:
 class POStore(Store):
 	GLOBS = ["*.po", "*.pot"]
 
-	def read(self, file, lang):
+	def read(self, file, lang, srclang):
 		po = polib.pofile(file.read())
 		lang = po.metadata.get("Language", lang)
 		for entry in po:
@@ -61,6 +61,18 @@ class POStore(Store):
 				flags.remove("fuzzy")
 			unit.po_flags = flags
 			self.units.append(unit)
+
+			if srclang:
+				# Create a "source" unit as well
+				srcunit = Unit(entry.msgid, entry.msgid)
+				srcunit.lang = srclang
+				srcunit.context = entry.msgctxt
+				srcunit.obsolete = entry.obsolete
+				srcunit.occurrences = entry.occurrences[:]
+				srcunit.state = unit.state
+				srcunit.po_flags = flags
+				self.units.append(srcunit)
+
 
 	def serialize(self):
 		po = polib.POFile()
