@@ -168,7 +168,7 @@ class TSStore(XMLStore):
 	GLOBS = ["*.ts"]
 	VERSION = "2.1"
 
-	def read(self, file, lang):
+	def read(self, file, lang, srclang=None):
 		xml = ElementTree.parse(file)
 		lang = xml.getroot().attrib["language"]
 		for context in xml.findall("context"):
@@ -191,6 +191,16 @@ class TSStore(XMLStore):
 				elif translation_type == "unfinished":
 					unit.state = State.UNFINISHED
 				self.units.append(unit)
+
+			if srclang:
+				# Create a "source" unit as well
+				srcunit = Unit(source, source)
+				srcunit.lang = srclang
+				srcunit.occurrences = unit.occurrences[:]
+				srcunit.context = context_name
+				srcunit.obsolete = unit.obsolete
+				srcunit.state = unit.state
+				self.units.append(srcunit)
 
 	def serialize(self):
 		root = ElementTree.Element("TS")
