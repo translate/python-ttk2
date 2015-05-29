@@ -127,7 +127,7 @@ class PropertiesStore(Store):
 		comment = None
 		for node in props.nodes:
 			if isinstance(node, jproperties.Comment):
-				comment = node
+				comment = node.value
 			elif isinstance(node, jproperties.Property):
 				unit = Unit(node.key, node.value)
 				unit.lang = lang
