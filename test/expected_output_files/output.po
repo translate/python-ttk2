@@ -1,0 +1,12 @@
+# 
+msgid ""
+msgstr ""
+
+msgid "Key_1"
+msgstr "Value_1"
+
+msgid "Key_2"
+msgstr "Value_2"
+
+msgid "Key_3"
+msgstr "Value_3"

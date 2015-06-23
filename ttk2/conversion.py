@@ -1,5 +1,6 @@
-from ttk2.formats import guess_format
 import logging
+from ttk2.formats import guess_format
+
 
 def convert(outfile, infile_list, template=None):
 	"""

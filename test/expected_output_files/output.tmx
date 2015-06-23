@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<tmx version="1.4">
+	<header datatype="PlainText" o-tmf="utf-8" segtype="sentence"/>
+	<body>
+		<tu>
+			<tuv xml:lang="todo">
+				<seg>Value_1</seg>
+			</tuv>
+		</tu>
+		<tu>
+			<tuv xml:lang="todo">
+				<seg>Value_2</seg>
+			</tuv>
+		</tu>
+		<tu>
+			<tuv xml:lang="todo">
+				<seg>Value_3</seg>
+			</tuv>
+		</tu>
+	</body>
+</tmx>
